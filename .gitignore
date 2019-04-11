@@ -1,0 +1,17 @@
+.project
+.setting
+*~
+*.diff
+*.patch
+/*.html
+.DS_Store
+.bower.json
+.sizecache.json
+
+npm-debug.log
+
+.idea/
+/dist
+/release
+/node_modules
+/lib
