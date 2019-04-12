@@ -30,7 +30,7 @@ namespace Soo.math {
             return this;
         }
 
-        /** 克隆点对象 */
+        /** 克隆对象 */
         clone(): Rectangle {
             return new Rectangle(this.x, this.y, this.width, this.height);
         }
@@ -53,7 +53,7 @@ namespace Soo.math {
 
         /** 转化为字符串 */
         toString(): string {
-            return `(x=${this.x},y=${this.y},width=${this.width},height=${this.height})`;
+            return `(x=${this.x}, y=${this.y}, width=${this.width}, height=${this.height})`;
         }
 
         /** 通过对象池创建*/
@@ -69,5 +69,6 @@ namespace Soo.math {
         }
     }
 
+    // 仅供框架内部使用
     export let $TempRectangle = new Rectangle();
 }

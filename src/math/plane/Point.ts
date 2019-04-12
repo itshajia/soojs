@@ -21,7 +21,7 @@ namespace Soo.math {
             return this;
         }
 
-        /** 克隆点对象 */
+        /** 克隆对象 */
         clone(): Point {
             return new Point(this.x, this.y);
         }
@@ -42,7 +42,7 @@ namespace Soo.math {
 
         /** 转化为字符串 */
         toString(): string {
-            return `(x=${this.x},y=${this.y})`;
+            return `(x=${this.x}, y=${this.y})`;
         }
 
         /** 通过对象池创建*/
@@ -58,5 +58,6 @@ namespace Soo.math {
         }
     }
 
+    // 仅供框架内部使用
     export let $TempPoint = new Point();
 }
