@@ -10,6 +10,17 @@ namespace Soo.math {
         return radian / DEG_TO_RAD;
     }
 
+    /** 格式化旋转角度的值 */
+    export function clampRotation(value): number {
+        value %= 360;
+        if (value > 180) {
+            value -= 360;
+        } else if (value < -180) {
+            value += 360;
+        }
+        return value;
+    }
+
     // sin
     export function sin(angle: number): number {
         let angleFloor = Math.floor(angle);

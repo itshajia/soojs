@@ -1,33 +1,66 @@
 namespace Soo.canvas {
     import Matrix = Soo.math.Matrix;
+    import clampRotation = Soo.math.clampRotation;
+    import angle2Radian = Soo.math.angle2Radian;
+    import radian2Angle = Soo.math.radian2Angle;
     export let $EVENT_ADD_TO_STAGE_LIST: DisplayObject[] = [];
     export let $EVENT_REMOVE_FROM_STAGE_LIST: DisplayObject[] = [];
 
     // 显示对象失效标志
     export const enum DisplayObjectFlags {
         /** 自身绘制区域尺寸失效 */
-        InvalidContentBounds = 0x0002,
+        DirtyContentBounds = 0x0002, // 10
 
         /** 矩形区域失效（包含自身绘制区域和子项的区域） */
-        InvalidBounds = 0x0004,
+        DirtyBounds = 0x0004, // 100
 
         /** 矩阵属性失效标志 */
-        InvalidMatrix = 0x0008,
+        DirtyMatrix = 0x0008, // 1000
 
         /** 上级矩阵失效 */
-        InvalidConcatenatedMatrix = 0x0010,
+        DirtyConcatenatedMatrix = 0x0010, // 10000
 
         /** 上级逆矩阵失效 */
-        InvalidInvertedConcatenatedMatrix = 0x0020,
+        DirtyInvertedConcatenatedMatrix = 0x0020, // 100000
 
         /** 上级透明度属性失效 */
-        InvalidConcatenatedAlpha = 0x0040
+        DirtyConcatenatedAlpha = 0x0040, // 1000000
+
+        /** 上级可见属性失效 */
+        DirtyConcatenatedVisible = 0x0080,
+
+        /** DrawData失效 */
+        DirtyRenderNodes = 0x0100,
+
+        /** 自身重新绘制 */
+        DirtyRender = 0x200,
+
+        /** 重绘所有子项 */
+        DirtyChildren = 0x400,
+
+        Dirty = DirtyRender | DirtyChildren,
+
+        /** 添加或删除时的标志量（只影响子项，需向子项传递标志） */
+        AddedOrRemoved = DisplayObjectFlags.DirtyConcatenatedMatrix |
+            DisplayObjectFlags.DirtyInvertedConcatenatedMatrix |
+            DisplayObjectFlags.DirtyConcatenatedAlpha |
+            DisplayObjectFlags.DirtyConcatenatedVisible |
+            DisplayObjectFlags.DirtyChildren,
+
+        /** 初始化的标志量 */
+        InitFlags = DisplayObjectFlags.DirtyConcatenatedMatrix |
+            DisplayObjectFlags.DirtyInvertedConcatenatedMatrix |
+            DisplayObjectFlags.DirtyConcatenatedAlpha |
+            DisplayObjectFlags.DirtyConcatenatedVisible |
+            DisplayObjectFlags.DirtyRenderNodes |
+            DisplayObjectFlags.Dirty
     }
 
     // 显示对象
     export class DisplayObject extends EventDispatcher {
         constructor() {
             super();
+            this.$displayFlags = DisplayObjectFlags.InitFlags;
         }
 
         protected $displayFlags: DisplayObjectFlags;
@@ -59,20 +92,20 @@ namespace Soo.canvas {
             }
         }
 
-        /** 沿着显示列表向上传递标志量，如果已经被设置过了就停止传递 */
-        protected $propagateFlagsUp(flags: DisplayObjectFlags): void {
+        /** 沿着显示列表向上设置标志量，如果已经被设置过了就停止传递 */
+        protected $setFlagsUp(flags: DisplayObjectFlags): void {
             if (this.$hasFlags(flags)) {
                 return;
             }
             this.$setFlags(flags);
             let parent = this.$parent;
             if (parent) {
-                parent.$propagateFlagsUp(flags);
+                parent.$setFlagsUp(flags);
             }
         }
 
-        /** 沿着显示列表乡下传递标志量 */
-        protected $propagateFlagsDown(flags: DisplayObjectFlags): void {
+        /** 沿着显示列表向下传递设置标志量 */
+        protected $setFlagsDown(flags: DisplayObjectFlags): void {
             this.$setFlags(flags);
         }
 
@@ -87,7 +120,6 @@ namespace Soo.canvas {
 
         /** 防止重复行为 */
         private $hasAddToStage: boolean = false;
-
         /** 显示对象添加到舞台 */
         protected $onAddToStage(stage: Stage, nestLevel: number): void {
             this.$stage = stage;
@@ -117,6 +149,10 @@ namespace Soo.canvas {
             return this.$getMatrix().clone();
         }
         $getMatrix(): Matrix {
+            if (this.$hasFlags(DisplayObjectFlags.DirtyMatrix)) {
+                this.$matrix.$updateScaleAndRotation(this.$scaleX, this.$scaleY, this.$skewX, this.$skewY);
+                this.$removeFlags(DisplayObjectFlags.DirtyMatrix);
+            }
             return this.$matrix;
         }
         set matrix(value: Matrix) {
@@ -129,8 +165,16 @@ namespace Soo.canvas {
             }
             m.copyFrom(matrix);
             if (needUpdateProperties) {
-
+                this.$scaleX = m.scaleX;
+                this.$scaleY = m.scaleY;
+                this.$skewX = m.skewX;
+                this.$skewY = m.skewY;
+                this.$skewXDeg = clampRotation(radian2Angle(this.$skewX));
+                this.$skewYDeg = clampRotation(radian2Angle(this.$skewY));
+                this.$rotation = clampRotation(radian2Angle(this.$skewY));
             }
+            this.$removeFlags(DisplayObjectFlags.DirtyMatrix);
+            // TODO
             return true;
         }
 
@@ -174,6 +218,179 @@ namespace Soo.canvas {
             return true;
         }
 
+        /** 水平缩放值 */
+        private $scaleX: number = 1;
+        get scaleX(): number {
+            return this.$getScaleX();
+        }
+        $getScaleX(): number {
+            return this.$scaleX;
+        }
+        set scaleX(value: number) {
+            this.$setScaleX(value);
+        }
+        $setScaleX(value: number): boolean {
+            value = +value || 0;
+            if (this.$scaleX == value) {
+                return false;
+            }
+            this.$scaleX = value;
+            this.$invalidateMatrix();
+            return true;
+        }
+
+        /** 垂直缩放值 */
+        private $scaleY: number = 1;
+        get scaleY(): number {
+            return this.$getScaleY();
+        }
+        $getScaleY(): number {
+            return this.$scaleY;
+        }
+        set scaleY(value: number) {
+            this.$setScaleY(value);
+        }
+        $setScaleY(value: number): boolean {
+            if (this.$scaleY == value) {
+                return false;
+            }
+            this.$scaleY = value;
+            this.$invalidateMatrix();
+            return true;
+        }
+
+        /** 水平斜切值 */
+        private $skewX: number = 0;
+        private $skewXDeg: number = 0;
+        get skewX(): number {
+            return this.$skewXDeg;
+        }
+        set skewX(angle: number) {
+            this.$setSkewX(angle);
+        }
+        $setSkewX(angle: number): boolean {
+            angle = +angle || 0;
+            if (angle == this.$skewXDeg) {
+                return false;
+            }
+            this.$skewXDeg = angle;
+            angle = clampRotation(angle);
+            this.$skewX = angle2Radian(angle);
+            this.$invalidateMatrix();
+            return true;
+        }
+
+        /** 垂直斜切值 */
+        private $skewY: number = 0;
+        private $skewYDeg: number = 0;
+        get skewY(): number {
+            return this.$skewYDeg;
+        }
+        set skewY(angle: number) {
+            this.$setSkewY(angle);
+        }
+        $setSkewY(angle: number): boolean {
+            angle = +angle || 0;
+            if (angle == this.$skewYDeg) {
+                return false;
+            }
+            this.$skewYDeg = angle;
+            angle = clampRotation(angle);
+            this.$skewY = angle2Radian(angle);
+            this.$invalidateMatrix();
+            return true;
+        }
+
+        /** 旋转角度 */
+        private $rotation: number = 0;
+        get rotation(): number {
+            return this.$getRotation();
+        }
+        $getRotation(): number {
+            return this.$rotation;
+        }
+        set rotation(angle: number) {
+            this.$setRotation(angle);
+        }
+        $setRotation(angle: number): boolean {
+            angle = clampRotation(+angle || 0);
+            if (angle == this.$rotation) {
+                return false;
+            }
+            let delta = angle - this.$rotation;
+            let radian = angle2Radian(delta);
+            this.$skewX += radian;
+            this.$skewY += radian;
+            this.$rotation = angle;
+            this.$invalidateMatrix();
+            return true;
+        }
+
+        /** 横向绝对锚点 */
+        protected $anchorOffsetX: number = 0;
+        get anchorOffsetX(): number {
+            return this.$anchorOffsetX;
+        }
+        set anchorOffsetX(value: number) {
+            this.$setAnchorOffsetX(value);
+        }
+        $setAnchorOffsetX(value: number): boolean {
+            value = +value || 0;
+            if (value == this.$anchorOffsetX) {
+                return false;
+            }
+            this.$anchorOffsetX = value;
+            this.$invalidatePosition();
+            return true;
+        }
+
+        /** 纵向绝对锚点 */
+        protected $anchorOffsetY: number = 0;
+        get anchorOffsetY(): number {
+            return this.$anchorOffsetY;
+        }
+        set anchorOffsetY(value: number) {
+            this.$setAnchorOffsetY(value);
+        }
+        $setAnchorOffsetY(value: number): boolean {
+            value = +value || 0;
+            if (value == this.$anchorOffsetY) {
+                return false;
+            }
+            this.$anchorOffsetY = value;
+            this.$invalidatePosition();
+            return true;
+        }
+
+        /** 是否可见 */
+        protected $visible: boolean = true;
+        get visible(): boolean {
+            return this.$visible;
+        }
+        set visible(value: boolean) {
+            this.$setVisible(value);
+        }
+        $setVisible(value: boolean): boolean {
+            if (value == this.$visible) {
+                return false;
+            }
+            this.$visible = value;
+            this.$invalidateTransform();
+            return true;
+        }
+
+        /** 标记绘图失效，需要重新绘制 */
+        protected $invalidateRender(notifyChildren?: boolean): void {
+
+        }
+
+        /** 标记变换叠加的显示内容失效 */
+        protected $invalidateTransform(): void {
+
+        }
+
+        /** 标记自身内容尺寸失效 */
+        protected $invalidateContentBounds(): void {}
 
         /** 标记矩阵失效 */
         protected $invalidateMatrix(): void {

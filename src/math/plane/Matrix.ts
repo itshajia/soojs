@@ -110,20 +110,20 @@ namespace Soo.math {
         rotate(radian: number): void {
             if (radian !== 0) {
                 let angle = radian2Angle(radian);
-                let cos = cos(angle);
-                let sin = sin(angle);
+                let $cos = cos(angle);
+                let $sin = sin(angle);
                 let a = this.a;
                 let b = this.b;
                 let c = this.c;
                 let d = this.d;
                 let tx = this.tx;
                 let ty = this.ty;
-                this.a = a * cos - b * sin;
-                this.b = a * sin + b * cos;
-                this.c = c * cos - d * sin;
-                this.d = c * sin + d * cos;
-                this.tx = tx * cos - ty * sin;
-                this.ty = tx * sin + ty * cos;
+                this.a = a * $cos - b * $sin;
+                this.b = a * $sin + b * $cos;
+                this.c = c * $cos - d * $sin;
+                this.d = c * $sin + d * $cos;
+                this.tx = tx * $cos - ty * $sin;
+                this.ty = tx * $sin + ty * $cos;
             }
         }
 
@@ -213,6 +213,27 @@ namespace Soo.math {
                 return result.setTo($x, $y);
             }
             return new Point($x, $y);
+        }
+
+        /** 更新缩放值和旋转角度 */
+        $updateScaleAndRotation(scaleX: number, scaleY: number, skewX: number, skewY: number): void {
+            if ((skewX == 0 || skewX == TwoPI) && (skewY == 0 || skewY == TwoPI)) {
+                this.a = scaleX;
+                this.b = this.c = 0;
+                this.d = scaleY;
+                return;
+            }
+            let $cos = cos(radian2Angle(skewX));
+            let $sin = sin(radian2Angle(skewX));
+            if (skewX == skewY) {
+                this.a = $cos * scaleX;
+                this.b = $sin * scaleX;
+            } else {
+                this.a = cos(radian2Angle(skewY)) * scaleX;
+                this.b = sin(radian2Angle(skewY)) * scaleX;
+            }
+            this.c = -$sin * scaleY;
+            this.d = $cos * scaleY;
         }
 
         /** 通过对象池创建*/
