@@ -3,6 +3,7 @@ namespace Soo.canvas {
     import clampRotation = Soo.math.clampRotation;
     import angle2Radian = Soo.math.angle2Radian;
     import radian2Angle = Soo.math.radian2Angle;
+    import Rectangle = Soo.math.Rectangle;
     export let $EVENT_ADD_TO_STAGE_LIST: DisplayObject[] = [];
     export let $EVENT_REMOVE_FROM_STAGE_LIST: DisplayObject[] = [];
 
@@ -143,6 +144,28 @@ namespace Soo.canvas {
             return this.$stage;
         }
 
+        /** 标记绘图失效，需要重新绘制 */
+        protected $dirtyRender(notifyChildren?: boolean): void {
+
+        }
+
+        /** 标记变换叠加的显示内容失效 */
+        protected $dirtyTransform(): void {
+
+        }
+
+        /** 标记自身内容尺寸失效 */
+        protected $dirtyContentBounds(): void {}
+
+        /** 标记矩阵失效 */
+        protected $dirtyMatrix(): void {
+
+        }
+        /** 标记位置发生改变 */
+        protected $dirtyPosition(): void {
+
+        }
+
         /** 显示对象矩阵 */
         private $matrix: Matrix = new Matrix();
         get matrix(): Matrix {
@@ -176,6 +199,18 @@ namespace Soo.canvas {
             this.$removeFlags(DisplayObjectFlags.DirtyMatrix);
             // TODO
             return true;
+        }
+
+        /** 显示对象以及它所有父级对象的连接矩阵 */
+        private $concatenatedMatrix: Matrix;
+        $getConcatenatedMatrix(): Matrix {
+
+        }
+
+        /** 显示对象以及它所有父级对象的连接逆向矩阵 */
+        private $invertedConcatenatedMatrix: Matrix;
+        $getInvertedConcatenatedMatrix(): Matrix {
+
         }
 
         /** X坐标 */
@@ -235,7 +270,7 @@ namespace Soo.canvas {
                 return false;
             }
             this.$scaleX = value;
-            this.$invalidateMatrix();
+            this.$dirtyMatrix();
             return true;
         }
 
@@ -255,7 +290,7 @@ namespace Soo.canvas {
                 return false;
             }
             this.$scaleY = value;
-            this.$invalidateMatrix();
+            this.$dirtyMatrix();
             return true;
         }
 
@@ -276,7 +311,7 @@ namespace Soo.canvas {
             this.$skewXDeg = angle;
             angle = clampRotation(angle);
             this.$skewX = angle2Radian(angle);
-            this.$invalidateMatrix();
+            this.$dirtyMatrix();
             return true;
         }
 
@@ -297,7 +332,7 @@ namespace Soo.canvas {
             this.$skewYDeg = angle;
             angle = clampRotation(angle);
             this.$skewY = angle2Radian(angle);
-            this.$invalidateMatrix();
+            this.$dirtyMatrix();
             return true;
         }
 
@@ -322,7 +357,7 @@ namespace Soo.canvas {
             this.$skewX += radian;
             this.$skewY += radian;
             this.$rotation = angle;
-            this.$invalidateMatrix();
+            this.$dirtyMatrix();
             return true;
         }
 
@@ -340,7 +375,7 @@ namespace Soo.canvas {
                 return false;
             }
             this.$anchorOffsetX = value;
-            this.$invalidatePosition();
+            this.$dirtyPosition();
             return true;
         }
 
@@ -358,7 +393,7 @@ namespace Soo.canvas {
                 return false;
             }
             this.$anchorOffsetY = value;
-            this.$invalidatePosition();
+            this.$dirtyPosition();
             return true;
         }
 
@@ -375,30 +410,121 @@ namespace Soo.canvas {
                 return false;
             }
             this.$visible = value;
-            this.$invalidateTransform();
+            this.$dirtyTransform();
             return true;
         }
 
-        /** 标记绘图失效，需要重新绘制 */
-        protected $invalidateRender(notifyChildren?: boolean): void {
-
+        private $concatenatedVisible: boolean;
+        $getConcatenatedVisible(): boolean {
+            if (this.$hasFlags(DisplayObjectFlags.DirtyConcatenatedVisible)) {
+                if (this.$parent) {
+                    this.$concatenatedVisible = this.$parent.$getConcatenatedVisible() && this.$visible;
+                } else {
+                    this.$concatenatedVisible = this.$visible;
+                }
+            }
+            return this.$concatenatedVisible;
         }
 
-        /** 标记变换叠加的显示内容失效 */
-        protected $invalidateTransform(): void {
-
+        /** 透明度 */
+        protected $alpha: number = 1;
+        get alpha(): number {
+            return this.$alpha;
+        }
+        set alpha(value: number) {
+            this.$setAlpha(value);
+        }
+        $setAlpha(value: number): boolean {
+            value = +value || 0;
+            if (value == this.$alpha) {
+                return false;
+            }
+            this.$alpha = value;
+            this.$setFlagsDown(DisplayObjectFlags.DirtyConcatenatedAlpha);
+            this.$dirtyRender();
+            return true;
         }
 
-        /** 标记自身内容尺寸失效 */
-        protected $invalidateContentBounds(): void {}
-
-        /** 标记矩阵失效 */
-        protected $invalidateMatrix(): void {
-
+        /** 是否可操作 */
+        protected $touchEnabled: boolean = false;
+        get touchEnabled(): boolean {
+            return this.$touchEnabled;
         }
-        /** 标记位置发生改变 */
-        protected $invalidatePosition(): void {
+        set touchEnabled(value: boolean) {
+            if (this.$touchEnabled == value) {
+                return;
+            }
+            this.$touchEnabled = value;
+        }
 
+        /** 背景透明区域是否可以穿透 */
+        protected $touchThrough: boolean = false;
+        get touchThrough(): boolean {
+            return this.$touchThrough;
+        }
+        set touchThrough(value: boolean) {
+            if (this.$touchThrough == value) {
+                return;
+            }
+            this.$touchThrough = value;
+        }
+
+        /** 遮罩层 */
+        protected $mask: DisplayObject = null;
+        protected $maskRect: Rectangle = null;
+        /** 被遮罩的目标 */
+        private $maskedTarget: DisplayObject = null;
+        get mask(): DisplayObject | Rectangle {
+            return this.$mask || this.$maskRect;
+        }
+        set mask(value: DisplayObject | Rectangle) {
+            if (value === this) {
+                return;
+            }
+            if (value) {
+                if (value instanceof DisplayObject) {
+                    if (value === this.$mask) {
+                        return;
+                    }
+                    if (value.$maskedTarget) { // 一个遮罩层对象只能在一个显示对象上生效
+                        value.$maskedTarget.mask = null;
+                    }
+                    value.$maskedTarget = this;
+                    // TODO
+                    this.$mask = value;
+                    this.$maskRect = null;
+                } else {
+                    this.$setMaskRect(<Rectangle>value);
+                    if (this.$mask) {
+                        this.$mask.$maskedTarget = null;
+                        // TODO
+                    }
+                    this.$mask = null;
+                }
+            } else {
+                if (this.$mask) {
+                    this.$mask.$maskedTarget = null;
+                    // TODO
+                }
+                this.$mask = null;
+                this.$maskRect = null;
+            }
+            // TODO
+        }
+        private $setMaskRect(value: Rectangle): boolean {
+            if (!value && !this.$maskRect) {
+                return false;
+            }
+            if (value) {
+                if (!this.$maskRect) {
+                    this.$maskRect = new Rectangle();
+                }
+                this.$maskRect.copyFrom(value);
+            } else {
+                this.$maskRect = null;
+            }
+            // TODO
+            return true;
         }
     }
     
