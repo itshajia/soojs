@@ -472,8 +472,8 @@ namespace Soo.canvas {
         /** 遮罩层 */
         protected $mask: DisplayObject = null;
         protected $maskRect: Rectangle = null;
-        /** 被遮罩的目标 */
-        private $maskedTarget: DisplayObject = null;
+        /** 被遮罩的对象 */
+        private $maskedObject: DisplayObject = null;
         get mask(): DisplayObject | Rectangle {
             return this.$mask || this.$maskRect;
         }
@@ -486,24 +486,24 @@ namespace Soo.canvas {
                     if (value === this.$mask) {
                         return;
                     }
-                    if (value.$maskedTarget) { // 一个遮罩层对象只能在一个显示对象上生效
-                        value.$maskedTarget.mask = null;
+                    if (value.$maskedObject) { // 一个遮罩层对象只能在一个显示对象上生效
+                        value.$maskedObject.mask = null;
                     }
-                    value.$maskedTarget = this;
+                    value.$maskedObject = this;
                     // TODO
                     this.$mask = value;
                     this.$maskRect = null;
                 } else {
                     this.$setMaskRect(<Rectangle>value);
                     if (this.$mask) {
-                        this.$mask.$maskedTarget = null;
+                        this.$mask.$maskedObject = null;
                         // TODO
                     }
                     this.$mask = null;
                 }
             } else {
                 if (this.$mask) {
-                    this.$mask.$maskedTarget = null;
+                    this.$mask.$maskedObject = null;
                     // TODO
                 }
                 this.$mask = null;
