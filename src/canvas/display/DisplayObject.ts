@@ -4,6 +4,8 @@ namespace Soo.canvas {
     import angle2Radian = Soo.math.angle2Radian;
     import radian2Angle = Soo.math.radian2Angle;
     import Rectangle = Soo.math.Rectangle;
+    import Point = Soo.math.Point;
+    import $TempMatrix = Soo.math.$TempMatrix;
     export let $EVENT_ADD_TO_STAGE_LIST: DisplayObject[] = [];
     export let $EVENT_REMOVE_FROM_STAGE_LIST: DisplayObject[] = [];
 
@@ -204,13 +206,104 @@ namespace Soo.canvas {
         /** 显示对象以及它所有父级对象的连接矩阵 */
         private $concatenatedMatrix: Matrix;
         $getConcatenatedMatrix(): Matrix {
+            let matrix = this.$concatenatedMatrix || new Matrix();
+            if (this.$hasFlags(DisplayObjectFlags.DirtyConcatenatedMatrix)) {
+                if (this.$parent) {
+                    this.$parent.$getConcatenatedMatrix().$preMultiplyInto(this.$getMatrix(), matrix);
+                } else {
+                    matrix.copyFrom(this.$getMatrix());
+                }
 
+                let offsetX = this.$anchorOffsetX;
+                let offsetY = this.$anchorOffsetY;
+                if (offsetX || offsetY) {
+                    matrix.$preMultiplyInto($TempMatrix.setTo(1, 0, 0, 1, -offsetX, -offsetY), matrix);
+                }
+
+                this.$removeFlags(DisplayObjectFlags.DirtyConcatenatedMatrix);
+            }
+            return matrix;
         }
 
         /** 显示对象以及它所有父级对象的连接逆向矩阵 */
         private $invertedConcatenatedMatrix: Matrix;
         $getInvertedConcatenatedMatrix(): Matrix {
+            let matrix = this.$invertedConcatenatedMatrix || new Matrix();
+            if (this.$hasFlags(DisplayObjectFlags.DirtyInvertedConcatenatedMatrix)) {
+                this.$getConcatenatedMatrix().$invertInto(matrix);
+                this.$removeFlags(DisplayObjectFlags.DirtyInvertedConcatenatedMatrix);
+            }
+            return matrix;
+        }
 
+        /** 全局（舞台）坐标转换为本地（显示对象）坐标 */
+        globalToLocal(stageX: number = 0, stageY: number = 0, resultPoint?: Point): Point {
+            return this.$getInvertedConcatenatedMatrix().transformPoint(stageX, stageY, resultPoint);
+        }
+
+        /** 本地（显示对象）坐标转换为全局（舞台）坐标 */
+        localToGlobal(localX: number = 0, localY: number = 0, resultPoint?: Point): Point {
+            return this.$getConcatenatedMatrix().transformPoint(localX, localY, resultPoint);
+        }
+
+        /** 将自身的本地坐标转换为目标对象的本地坐标 */
+        localPointTo(localX: number, localY: number, targetCoordinateSpace: DisplayObject, resultPoint?: Point): Point {
+            if (!resultPoint) {
+                resultPoint = new Point();
+            }
+            if (targetCoordinateSpace == this) {
+                return resultPoint.setTo(localX, localY);
+            }
+            // 先转换为全局坐标
+            this.localToGlobal(localX, localY, resultPoint);
+            // 接着转换为目标对象的本地坐标
+            targetCoordinateSpace.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);
+            return resultPoint
+        }
+
+        /** 将目标对象的本地坐标转换为自身的本地坐标 */
+        localPointFrom(targetLocalX: number, targetLocalY: number, targetCoordinateSpace: DisplayObject, resultPoint?: Point): Point {
+            if (!resultPoint) {
+                resultPoint = new Point();
+            }
+            if (targetCoordinateSpace == this) {
+                return resultPoint.setTo(targetLocalX, targetLocalY);
+            }
+            // 先转换为全局坐标
+            targetCoordinateSpace.localToGlobal(targetLocalX, targetLocalY, resultPoint);
+            // 接着转换为本地坐标
+            this.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);
+            return resultPoint
+        }
+
+        /** 将自身的本地矩形转换为目标对象的本地矩形 */
+        localBoundsTo(localBounds: Rectangle, targetCoordinateSpace: DisplayObject, resultBounds?: Rectangle): Rectangle {
+            if (!resultBounds) {
+                resultBounds = new Rectangle();
+            }
+            if (targetCoordinateSpace == this) {
+                return resultBounds.copyFrom(localBounds);
+            }
+            // 先应用自身的连接矩阵，获得全局矩阵，再将全局矩阵转换为目标内部矩阵
+            let invertedTargetMatrix = targetCoordinateSpace.$getInvertedConcatenatedMatrix();
+            invertedTargetMatrix.$preMultiplyInto(this.$getConcatenatedMatrix(), $TempMatrix);
+            $TempMatrix.transformBounds(resultBounds);
+            return resultBounds;
+        }
+
+        /** 将目标对象的本地矩形转换为自身的本地矩形 */
+        localBoundsFrom(targetBounds: Rectangle, targetCoordinateSpace: DisplayObject, resultBounds?: Rectangle): Rectangle {
+            if (!resultBounds) {
+                resultBounds = new Rectangle();
+            }
+            if (targetCoordinateSpace == this) {
+                return resultBounds.copyFrom(targetBounds);
+            }
+            // 先将目标矩阵转换为全局矩阵，再讲全局矩阵转换为自身的内部矩阵
+            let invertedMatrix = this.$getInvertedConcatenatedMatrix();
+            invertedMatrix.$preMultiplyInto(targetCoordinateSpace.$getConcatenatedMatrix(), $TempMatrix);
+            $TempMatrix.transformBounds(resultBounds);
+            return resultBounds;
         }
 
         /** X坐标 */
@@ -525,6 +618,51 @@ namespace Soo.canvas {
             }
             // TODO
             return true;
+        }
+
+        /** 显示对象的测量边界 */
+        getBounds(resultBounds?: Rectangle, calculateAnchor: boolean = true): Rectangle {
+            resultBounds = this.localBoundsTo(this.$getOriginalBounds(), this, resultBounds);
+            if (calculateAnchor) {
+                if (this.$anchorOffsetX != 0) {
+                    resultBounds.x -= this.$anchorOffsetX;
+                }
+                if (this.$anchorOffsetY != 0) {
+                    resultBounds.y -= this.$anchorOffsetY;
+                }
+            }
+            return resultBounds;
+        }
+
+        /** 显示对象占用的矩形区域集合（包括自身绘制的侧脸区域，容器则包括所有子项占据的区域） */
+        $bounds: Rectangle = new Rectangle();
+        $getOriginalBounds(): Rectangle {
+            let bounds = this.$bounds;
+            if (this.$hasFlags(DisplayObjectFlags.DirtyBounds)) {
+                bounds.copyFrom(this.$getContentBounds());
+                this.$measureChildrenBounds(bounds); // 如果显示对象为容器，则测量子项占据内容真实有效
+                this.$removeFlags(DisplayObjectFlags.DirtyBounds);
+            }
+            return bounds;
+        }
+
+        /** 自身内容区域 */
+        $contentBounds: Rectangle = new Rectangle();
+        $getContentBounds(): Rectangle {
+            let bounds = this.$contentBounds;
+            if (this.$hasFlags(DisplayObjectFlags.DirtyContentBounds)) {
+                this.$measureContentBounds(bounds);
+                this.$removeFlags(DisplayObjectFlags.DirtyContentBounds);
+            }
+            return bounds;
+        }
+        /** 测量自身内容区域 */
+        $measureContentBounds(bounds: Rectangle): void {
+
+        }
+        /** 测量子项占用区域 */
+        $measureChildrenBounds(bounds: Rectangle): void {
+
         }
     }
     

@@ -75,7 +75,7 @@ namespace Soo.math {
         invert(): void {
             this.$invertInto(this);
         }
-        protected $invertInto(target: Matrix): void {
+        $invertInto(target: Matrix): void {
             let a = this.a, b = this.b;
             let c = this.c, d = this.d;
             let tx = this.tx, ty = this.ty;
@@ -143,29 +143,6 @@ namespace Soo.math {
             this.ty += dy;
         }
 
-        /** 连接矩阵（矩阵相乘，即多个变换叠加） */
-        concat(matrix: Matrix): void {
-            let a = this.a * matrix.a;
-            let b = 0.0;
-            let c = 0.0;
-            let d = this.d * matrix.d;
-            let tx = this.tx * matrix.a + matrix.tx;
-            let ty = this.ty * matrix.d + matrix.ty;
-
-            if (this.b !== 0.0 || this.c !== 0.0 || matrix.b !== 0.0 || matrix.c !== 0.0) {
-                a += this.b * matrix.c;
-                d += this.c * matrix.b;
-                b += this.a * matrix.b + this.b * matrix.d;
-                c += this.c * matrix.a + this.d * matrix.c;
-                tx += this.ty * matrix.c;
-                ty += this.tx * matrix.b;
-            }
-
-            this.a = a; this.b = b;
-            this.c = c; this.d = d;
-            this.tx = tx; this.ty = ty;
-        }
-
         /** 行列式 */
         get determinant(): number {
             return this.a * this.d - this.b * this.c;
@@ -205,6 +182,55 @@ namespace Soo.math {
             return Math.atan2(this.b, this.a);
         }
 
+        /** 连接矩阵（矩阵相乘，即多个变换叠加） */
+        concat(matrix: Matrix): void {
+            let a = this.a * matrix.a;
+            let b = 0.0;
+            let c = 0.0;
+            let d = this.d * matrix.d;
+            let tx = this.tx * matrix.a + matrix.tx;
+            let ty = this.ty * matrix.d + matrix.ty;
+
+            if (this.b !== 0.0 || this.c !== 0.0 || matrix.b !== 0.0 || matrix.c !== 0.0) {
+                a += this.b * matrix.c;
+                d += this.c * matrix.b;
+                b += this.a * matrix.b + this.b * matrix.d;
+                c += this.c * matrix.a + this.d * matrix.c;
+                tx += this.ty * matrix.c;
+                ty += this.tx * matrix.b;
+            }
+
+            this.a = a; this.b = b;
+            this.c = c; this.d = d;
+            this.tx = tx; this.ty = ty;
+        }
+
+        /** 前置连接矩阵（target = pre * this） */
+        $preMultiplyInto(pre: Matrix, target: Matrix): void {
+            let a = pre.a * this.a;
+            let b = 0.0;
+            let c = 0.0;
+            let d = pre.d * this.d;
+            let tx = pre.tx * this.a + this.tx;
+            let ty = pre.ty * this.d + this.ty;
+
+            if (pre.b !== 0.0 || pre.c !== 0.0 || this.b !== 0.0 || this.c !== 0.0) {
+                a += pre.b * this.c;
+                d += pre.c * this.b;
+                b += pre.a * this.b + pre.b * this.d;
+                c += pre.c * this.a + pre.d * this.c;
+                tx += pre.ty * this.c;
+                ty += pre.tx * this.b;
+            }
+
+            target.a = a;
+            target.b = b;
+            target.c = c;
+            target.d = d;
+            target.tx = tx;
+            target.ty = ty;
+        }
+
         /** 点变换 */
         transformPoint(x: number, y: number, result?: Point): Point {
             let $x = this.a * x + this.c * y + this.tx;
@@ -213,6 +239,60 @@ namespace Soo.math {
                 return result.setTo($x, $y);
             }
             return new Point($x, $y);
+        }
+
+        /** 矩形变换 */
+        transformBounds(bounds: Rectangle): void {
+            let a = this.a;
+            let b = this.b;
+            let c = this.c;
+            let d = this.d;
+            let tx = this.tx;
+            let ty = this.ty;
+
+            let x = bounds.x;
+            let y = bounds.y;
+            let xMax = x + bounds.width;
+            let yMax = y + bounds.height;
+
+            let x0 = a * x + c * y + tx;
+            let y0 = b * x + d * y + ty;
+            let x1 = a * xMax + c * y + tx;
+            let y1 = b * xMax + d * y + ty;
+            let x2 = a * xMax + c * yMax + tx;
+            let y2 = b * xMax + d * yMax + ty;
+            let x3 = a * x + c * yMax + tx;
+            let y3 = b * x + d * yMax + ty;
+
+            let tmp = 0;
+
+            if (x0 > x1) {
+                tmp = x0;
+                x0 = x1;
+                x1 = tmp;
+            }
+            if (x2 > x3) {
+                tmp = x2;
+                x2 = x3;
+                x3 = tmp;
+            }
+
+            bounds.x = Math.floor(x0 < x2 ? x0 : x2);
+            bounds.width = Math.ceil((x1 > x3 ? x1 : x3) - bounds.x);
+
+            if (y0 > y1) {
+                tmp = y0;
+                y0 = y1;
+                y1 = tmp;
+            }
+            if (y2 > y3) {
+                tmp = y2;
+                y2 = y3;
+                y3 = tmp;
+            }
+
+            bounds.y = Math.floor(y0 < y2 ? y0 : y2);
+            bounds.height = Math.ceil((y1 > y3 ? y1 : y3) - bounds.y);
         }
 
         /** 更新缩放值和旋转角度 */
