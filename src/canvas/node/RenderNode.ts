@@ -24,14 +24,24 @@ namespace Soo.canvas {
         dirty: boolean = false;
 
         /** 相对舞台的整体透明度 */
-        globalAlpha: number = 1;
+        renderAlpha: number = 1;
 
         /** 相对舞台的可见 */
-        globalVisible: boolean = true;
+        renderVisible: boolean = true;
 
-        /** 相对舞台的矩阵对象 */
-        globalMatrix: Matrix = new Matrix();
+        /** 相对于显示列表根节点或位图缓存根节点的矩阵对象 */
+        renderMatrix: Matrix = new Matrix();
 
+        /** 自身在显示列表根节点或位图缓存根节点的显示尺寸 */
+        renderRegion: Region = new Region();
 
+        /** 是否发生了改变 */
+        changed: boolean = false;
+
+        /** 绘制数据 */
+        renderData: any[] = [];
+
+        /** 绘制次数 */
+        renderCount: number = 0;
     }
 }

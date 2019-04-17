@@ -254,10 +254,14 @@ namespace Soo.canvas {
             if (targetCoordinateSpace == this) {
                 return resultPoint.setTo(localX, localY);
             }
-            // 先转换为全局坐标
+            /*// 先转换为全局坐标
             this.localToGlobal(localX, localY, resultPoint);
             // 接着转换为目标对象的本地坐标
-            targetCoordinateSpace.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);
+            targetCoordinateSpace.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);*/
+            // 先应用自身的连接矩阵，获得全局矩阵，再将全局矩阵转换为目标内部矩阵
+            let invertedTargetMatrix = targetCoordinateSpace.$getInvertedConcatenatedMatrix();
+            invertedTargetMatrix.$preMultiplyInto(this.$getConcatenatedMatrix(), $TempMatrix);
+            $TempMatrix.transformPoint(localX, localY, resultPoint);
             return resultPoint
         }
 
@@ -269,10 +273,14 @@ namespace Soo.canvas {
             if (targetCoordinateSpace == this) {
                 return resultPoint.setTo(targetLocalX, targetLocalY);
             }
-            // 先转换为全局坐标
+            /*// 先转换为全局坐标
             targetCoordinateSpace.localToGlobal(targetLocalX, targetLocalY, resultPoint);
             // 接着转换为本地坐标
-            this.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);
+            this.globalToLocal(resultPoint.x, resultPoint.y, resultPoint);*/
+            // 先将目标矩阵转换为全局矩阵，再讲全局矩阵转换为自身的内部矩阵
+            let invertedMatrix = this.$getInvertedConcatenatedMatrix();
+            invertedMatrix.$preMultiplyInto(targetCoordinateSpace.$getConcatenatedMatrix(), $TempMatrix);
+            $TempMatrix.transformPoint(targetLocalX, targetLocalY, resultPoint);
             return resultPoint
         }
 
@@ -620,23 +628,9 @@ namespace Soo.canvas {
             return true;
         }
 
-        /** 显示对象的测量边界 */
-        getBounds(resultBounds?: Rectangle, calculateAnchor: boolean = true): Rectangle {
-            resultBounds = this.localBoundsTo(this.$getOriginalBounds(), this, resultBounds);
-            if (calculateAnchor) {
-                if (this.$anchorOffsetX != 0) {
-                    resultBounds.x -= this.$anchorOffsetX;
-                }
-                if (this.$anchorOffsetY != 0) {
-                    resultBounds.y -= this.$anchorOffsetY;
-                }
-            }
-            return resultBounds;
-        }
-
         /** 显示对象占用的矩形区域集合（包括自身绘制的侧脸区域，容器则包括所有子项占据的区域） */
         $bounds: Rectangle = new Rectangle();
-        $getOriginalBounds(): Rectangle {
+        $getBounds(): Rectangle {
             let bounds = this.$bounds;
             if (this.$hasFlags(DisplayObjectFlags.DirtyBounds)) {
                 bounds.copyFrom(this.$getContentBounds());
@@ -644,6 +638,9 @@ namespace Soo.canvas {
                 this.$removeFlags(DisplayObjectFlags.DirtyBounds);
             }
             return bounds;
+        }
+        getBounds(resultBounds?: Rectangle): Rectangle {
+            return this.localBoundsTo(this.$getBounds(), this, resultBounds);
         }
 
         /** 自身内容区域 */
@@ -663,6 +660,55 @@ namespace Soo.canvas {
         /** 测量子项占用区域 */
         $measureChildrenBounds(bounds: Rectangle): void {
 
+        }
+
+        /** 宽度 */
+        private $explicitWidth: number = NaN;
+        get width(): number {
+            return this.$getWidth();
+        }
+        $getWidth(): number {
+            return isNaN(this.$explicitWidth) ? this.$getBounds().width : this.$explicitWidth;
+        }
+        set width(value: number) {
+
+        }
+        $setWidth(value: number): boolean {
+            this.$explicitWidth = isNaN(value) ? NaN : value;
+            value = +value;
+            if (value < 0) {
+                return false;
+            }
+            return true;
+        }
+
+        /** 高度 */
+        private $explicitHeight: number = NaN;
+        get height(): number {
+            return this.$getHeight();
+        }
+        $getHeight(): number {
+            return isNaN(this.$explicitHeight) ? this.$getBounds().height : this.$explicitHeight;
+        }
+        set height(value: number) {
+            this.$setHeight(value);
+        }
+        $setHeight(value: number): boolean {
+            this.$explicitHeight = isNaN(value) ? NaN : value;
+            value = +value;
+            if (value < 0) {
+                return false;
+            }
+            return true;
+        }
+
+        /** 测量宽度 */
+        get measuredWidth(): number {
+            return this.$getBounds().width;
+        }
+        /** 测量高度 */
+        get measuredHeight(): number {
+            return this.$getBounds().height;
         }
     }
     
