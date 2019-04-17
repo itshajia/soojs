@@ -1,4 +1,7 @@
 namespace Soo.canvas {
+    let PI = Math.PI;
+    let HalfPI = PI / 2;
+    let TwoPI = PI * 2;
 
     export const enum Path2DType {
         /** 纯色填充路径 */
@@ -82,6 +85,58 @@ namespace Soo.canvas {
             this.dataPosition = pos;
         }
 
+        /**  */
+        arcToBezier(x: number, y: number, radiusX: number, radiusY: number,
+                    startRadian: number, endRadian: number, clockwise: boolean = true) {
+            let halfPI = HalfPI;
+            let start = startRadian;
+            let end = start;
+            if (clockwise) {
+                end += halfPI - (start % halfPI);
+                if (end > endRadian) {
+                    end = endRadian;
+                }
+            } else {
+                end += -halfPI - (start % halfPI);
+                if (end < endRadian) {
+                    end = endRadian;
+                }
+            }
+
+            let cos = Math.cos(start);
+            let sin = Math.sin(start);
+            let curX = x + cos * radiusX;
+            let curY = y + sin * radiusY;
+            for (let i = 0; i < 4; i++) {
+                let diffRadian = end - start;
+                let a = 4 * Math.tan(diffRadian / 4) / 3;
+                let x1 = curX - sin * a * radiusX;
+                let y1 = curY + cos * a * radiusY;
+                cos = Math.cos(end);
+                sin = Math.sin(end);
+                curX = x + cos * radiusX;
+                curY = y + sin * radiusY;
+                let x2 = curX + sin * a * radiusX;
+                let y2 = curY - cos * a * radiusY;
+                this.cubicCurveTo(x1, y1, x2, y2, curX, curY);
+                if (end === endRadian) {
+                    break;
+                }
+                start = end;
+                if (clockwise) {
+                    end = start + halfPI;
+                    if (end > endRadian) {
+                        end = endRadian;
+                    }
+                } else {
+                    end = start - halfPI;
+                    if (end < endRadian) {
+                        end = endRadian;
+                    }
+                }
+            }
+        }
+
         /** 绘制矩形 */
         drawRect(x: number, y: number, width: number, height: number): void {
             let x2 = x + width;
@@ -113,17 +168,47 @@ namespace Soo.canvas {
             //  G         D
             //    F-----E
             // 从D点开始，结束在D点
-
+            let right = x + width;
+            let bottom = y + height;
+            let xRoundLeft = x + radius;
+            let xRoundRight = right - radius;
+            let yRoundTop = y + radius;
+            let yRoundBottom = bottom - radius;
+            this.moveTo(right, yRoundBottom);
+            this.curveTo(right, bottom, xRoundRight, bottom);
+            this.lineTo(xRoundLeft, bottom);
+            this.curveTo(x, bottom, x, yRoundBottom);
+            this.lineTo(x, yRoundTop);
+            this.curveTo(x, y, xRoundLeft, y);
+            this.lineTo(xRoundRight, y);
+            this.curveTo(right, y, right, yRoundTop);
+            this.lineTo(right, yRoundBottom);
         }
 
         /** 绘制圆 */
         drawCircle(x: number, y: number, radius: number): void {
-
+            this.arcToBezier(x, y, radius, radius, 0, TwoPI);
         }
 
         /** 绘制椭圆 */
         drawEllipse(x: number, y: number, width: number, height: number): void {
+            let radiusX = width * 0.5;
+            let radiusY = height * 0.5;
+            this.arcToBezier(x + radiusX, y + radiusY, radiusX, radiusY, 0, TwoPI);
+        }
 
+        /** 绘制圆弧路径 */
+        drawArc(x: number, y: number, radius: number, startRadian: number, endRadian: number, clockwise?: boolean): void {
+            if (clockwise) {
+                if ( endRadian <= startRadian ) {
+                    endRadian += TwoPI;
+                }
+            } else {
+                if ( endRadian >= startRadian ) {
+                    endRadian -= TwoPI;
+                }
+            }
+            this.arcToBezier(x, y, radius, radius, startRadian, endRadian, clockwise);
         }
     }
 }

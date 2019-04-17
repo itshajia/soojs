@@ -84,7 +84,7 @@ namespace Soo.canvas {
         }
 
         /** 绘制圆弧路径 */
-        drawArc(x: number, y: number, radius: number, startAngle: number, endAngle: number, clockwise: boolean = true): void {
+        drawArc(x: number, y: number, radius: number, startRadian: number, endRadian: number, clockwise?: boolean): void {
 
         }
     }
