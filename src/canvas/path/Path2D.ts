@@ -87,18 +87,18 @@ namespace Soo.canvas {
 
         /**  */
         arcToBezier(x: number, y: number, radiusX: number, radiusY: number,
-                    startRadian: number, endRadian: number, clockwise: boolean = true) {
+                    startRadian: number, endRadian: number, anticlockwise: boolean = false) {
             let halfPI = HalfPI;
             let start = startRadian;
             let end = start;
-            if (clockwise) {
-                end += halfPI - (start % halfPI);
-                if (end > endRadian) {
+            if (anticlockwise) {
+                end += -halfPI - (start % halfPI);
+                if (end < endRadian) {
                     end = endRadian;
                 }
             } else {
-                end += -halfPI - (start % halfPI);
-                if (end < endRadian) {
+                end += halfPI - (start % halfPI);
+                if (end > endRadian) {
                     end = endRadian;
                 }
             }
@@ -123,14 +123,14 @@ namespace Soo.canvas {
                     break;
                 }
                 start = end;
-                if (clockwise) {
-                    end = start + halfPI;
-                    if (end > endRadian) {
+                if (anticlockwise) {
+                    end = start - halfPI;
+                    if (end < endRadian) {
                         end = endRadian;
                     }
                 } else {
-                    end = start - halfPI;
-                    if (end < endRadian) {
+                    end = start + halfPI;
+                    if (end > endRadian) {
                         end = endRadian;
                     }
                 }

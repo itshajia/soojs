@@ -108,12 +108,12 @@ namespace Soo.canvas {
         }
 
         /** 沿着显示列表向下传递设置标志量 */
-        protected $setFlagsDown(flags: DisplayObjectFlags): void {
+        $setFlagsDown(flags: DisplayObjectFlags): void {
             this.$setFlags(flags);
         }
 
         /** 包含此显示对象的容器 */
-        private $parent: Container = null;
+        $parent: Container = null;
         get parent(): Container {
             return this.$parent;
         }
@@ -122,9 +122,9 @@ namespace Soo.canvas {
         }
 
         /** 防止重复行为 */
-        private $hasAddToStage: boolean = false;
+        $hasAddToStage: boolean = false;
         /** 显示对象添加到舞台 */
-        protected $onAddToStage(stage: Stage, nestLevel: number): void {
+        $onAddToStage(stage: Stage, nestLevel: number): void {
             this.$stage = stage;
             this.$nestLevel = nestLevel;
             this.$hasAddToStage = true;
@@ -132,7 +132,7 @@ namespace Soo.canvas {
         }
 
         /** 显示对象移除舞台 */
-        protected $onRemoveFromStage(): void {
+        $onRemoveFromStage(): void {
             this.$nestLevel = 0;
             $EVENT_REMOVE_FROM_STAGE_LIST.push(this);
         }
@@ -141,7 +141,7 @@ namespace Soo.canvas {
         protected $nestLevel: number = 0;
 
         /** 舞台 */
-        protected $stage: Stage = null;
+        $stage: Stage = null;
         get stage(): Stage {
             return this.$stage;
         }

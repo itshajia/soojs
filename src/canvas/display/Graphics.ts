@@ -1,4 +1,5 @@
 namespace Soo.canvas {
+    import Rectangle = Soo.math.Rectangle;
 
     // 矢量图形
     export class Graphics extends Container {
@@ -65,7 +66,15 @@ namespace Soo.canvas {
 
         /** 绘制矩形 */
         drawRect(x: number, y: number, width: number, height: number): void {
+            x = +x || 0;
+            y = +y || 0;
+            width = +width || 0;
+            height = +height || 0;
 
+            let fillPath = this.$fillPath;
+            let strokePath = this.$strokePath;
+            fillPath && fillPath.drawRect(x, y, width, height);
+            strokePath && strokePath.drawRect(x, y, width, height);
         }
 
         /** 绘制圆角矩形 */
@@ -84,7 +93,13 @@ namespace Soo.canvas {
         }
 
         /** 绘制圆弧路径 */
-        drawArc(x: number, y: number, radius: number, startRadian: number, endRadian: number, clockwise?: boolean): void {
+        drawArc(x: number, y: number, radius: number, startRadian: number, endRadian: number, anticlockwise?: boolean): void {
+
+        }
+
+
+        /** 测量自身内容区域 */
+        $measureContentBounds(bounds: Rectangle): void {
 
         }
     }
