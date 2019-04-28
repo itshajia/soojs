@@ -34,6 +34,13 @@ namespace Soo.dom {
         return doc.getElementById(el);
     }
 
+    /** 上下文中寻找单个dom */
+    export function findOne(context: HTMLElement, query: string): HTMLElement {
+        if (context && context.querySelector) {
+            return context.querySelector(query) as HTMLElement;
+        }
+    }
+
     /** 设置dom属性 */
     export function attr(el: HTMLElement, key: string, value?: any): any {
         if (!el) return;

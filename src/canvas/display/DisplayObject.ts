@@ -117,8 +117,9 @@ namespace Soo.canvas {
         get parent(): Container {
             return this.$parent;
         }
-        $setParent(parent: Container): void {
+        $setParent(parent: Container): boolean {
             this.$parent = parent;
+            return;
         }
 
         /** 防止重复行为 */

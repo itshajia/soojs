@@ -106,12 +106,6 @@ namespace Soo.canvas {
         get fgRenderer(): dom.RenderElement {
             return this.$fgRenderer;
         }
-
-        /** 舞台 */
-        private $stage: Stage;
-        get stage(): Stage {
-            return this.$stage;
-        }
     }
 }
 

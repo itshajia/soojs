@@ -3,14 +3,20 @@ namespace Soo.dom {
     export let $EVENT_REMOVE_FROM_DOM_STAGE_LIST: DOMElement[] = [];
 
     // dom显示对象
-    export class DOMElement extends EventDispatcher {
+    export class DOMElement extends $DisplayObject {
         constructor(element: string | HTMLElement) {
             super();
 
             if (isString(element)) {
-                this.$el = createElement(element as String);
+                this.$el = createElement(element as string);
             } else {
                 this.$el = element as HTMLElement;
+            }
+            let el: HTMLElement = this.$el;
+            let container = this.$childrenContainer = findOne(el, "[container]");
+            el.style.position = "absolute"; // 为了通过x,y坐标来定位，这里需要设置为绝对定位
+            if (container) {
+                container.style.position = "absolute";
             }
         }
 
@@ -20,9 +26,9 @@ namespace Soo.dom {
             return this.$el;
         }
         /** 子节点容器节点 */
-        $childrenContainerEl: HTMLElement;
-        get childrenContainerEl(): HTMLElement {
-            return this.$childrenContainerEl || this.$el;
+        $childrenContainer: HTMLElement;
+        get childrenContainer(): HTMLElement {
+            return this.$childrenContainer || this.$el;
         }
 
         /** 父级 */
@@ -37,7 +43,7 @@ namespace Soo.dom {
 
             if (parent) {
                 this.$parent = parent;
-                append(parent.$childrenContainerEl, this.$el);
+                append(parent.childrenContainer, this.$el);
             } else {
                 this.$parent = null;
                 remove(this.$el);
@@ -79,7 +85,14 @@ namespace Soo.dom {
         /** 启用 */
         enable(): DOMElement {
             if (this.$disabled) {
+                this.$disabled = false;
+                removeClass(this.$el, "disabled");
 
+                if (this.$touchEnabled) {
+
+                } else {
+
+                }
             }
             return this;
         }
@@ -87,7 +100,14 @@ namespace Soo.dom {
         /** 禁用 */
         disable(): DOMElement {
             if (!this.$disabled) {
+                this.$disabled = true;
+                addClass(this.$el, "disabled");
 
+                if (this.$touchEnabled) {
+
+                } else {
+
+                }
             }
             return this;
         }
@@ -143,6 +163,7 @@ namespace Soo.dom {
             // 设置属性
             $style[key] = value;
         }
+
 
     }
 }

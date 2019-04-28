@@ -1,22 +1,20 @@
 namespace Soo {
     declare let Symbol: any;
-
     let nativeIsArray = Array.isArray;
 
-    let nativeCreate = Object.create;
-
     function $typeof(obj: any): string {
+        let $$typeof;
         if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-            $typeof = function (obj) {
+            $$typeof = function (obj) {
                 return typeof obj;
             };
         } else {
-            $typeof = function (obj) {
+            $$typeof = function (obj) {
                 return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
             };
         }
 
-        return $typeof(obj);
+        return $$typeof(obj);
     }
 
     /** 是否为NULL */

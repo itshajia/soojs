@@ -1,7 +1,8 @@
 namespace Soo.dom {
+    import $Container = Soo.$Container;
 
     // dom显示容器
-    export class DOMContainer extends DOMElement {
+    export class DOMContainer extends DOMElement implements $Container {
         constructor(element: any) {
             super(element);
         }
@@ -13,31 +14,9 @@ namespace Soo.dom {
         }
 
         /** 添加子项 */
-        addChild(child: DOMElement): DOMElement {
-            let index = this.$children.length;
-            if (child.$parent == this) {
-                index--;
-                this.moveChildIndex(child, index);
-                return child;
-            }
-            return this.$addChild(child, index);
-        }
-
+        addChild: (child: DOMElement) => DOMElement;
         /** 添加子项到指定索引位置 */
-        addChildAt(child: DOMElement, index: number): DOMElement {
-            index = +index | 0;
-            let length = this.$children.length;
-            if (index < 0 || index >= length) {
-                index = length;
-                if (child.$parent == this) { // 如果已经存在于容器中，则移动位置
-                    index--;
-                    this.moveChildIndex(child, index);
-                    return child;
-                }
-            }
-
-            return this.$addChild(child, index);
-        }
+        addChildAt: (child: DOMElement, index: number) => DOMElement;
 
         $addChild(child: DOMElement, index: number): DOMElement {
             let childParent = child.$parent;
@@ -71,38 +50,14 @@ namespace Soo.dom {
         }
 
         /** 是否包含某个子项 */
-        contains(child: DOMElement): boolean {
-            while (child) {
-                if (child == this) {
-                    return true;
-                }
-                child = child.$parent;
-            }
-            return false;
-        }
+        contains: (child: DOMElement) => boolean;
 
         /** 移除子项 */
-        removeChild(child: DOMElement): DOMElement {
-            let index = this.$children.indexOf(child);
-            if (index != -1) {
-                return this.$removeChild(index);
-            }
-        }
-
+        removeChild: (child: DOMElement) => DOMElement;
         /** 移除指定索引位置的子项 */
-        removeChildAt(index: number): DOMElement {
-            if (index >= 0 && index < this.$children.length) {
-                return this.$removeChild(index);
-            }
-        }
-
+        removeChildAt: (index: number) => DOMElement;
         /** 移除所有子项 */
-        removeChildren(): void {
-            let children = this.$children;
-            for (let i = children.length - 1; i >= 0; i--) {
-                this.$removeChild(i);
-            }
-        }
+        removeChildren: () => void;
 
         $removeChild(index: number): DOMElement {
             let children = this.$children;
@@ -132,9 +87,7 @@ namespace Soo.dom {
         }
 
         /** 移动子项位置 */
-        moveChildIndex(child: DOMElement, index: number): void {
-
-        }
+        moveChildIndex: (child: DOMElement, index: number) => void;
 
         /** 容器添加到舞台 */
         $onAddToStage(stage: DOMStage, nestLevel: number): void {
@@ -156,15 +109,12 @@ namespace Soo.dom {
         }
 
         /** 子项被添加到容器内 */
-        $childAdded(child: DOMElement, index: number): void {
-
-        }
-
+        $childAdded: (child: DOMElement, index: number) => void;
         /** 子项从容器中移除 */
-        $childRemoved(child: DOMElement, index: number): void {
-
-        }
+        $childRemoved: (child: DOMElement, index: number) => void;
     }
+
+    applyMixins(DOMContainer, [$Container]);
 }
 
 namespace Soo {

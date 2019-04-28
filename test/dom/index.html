@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DOM</title>
+    <script src="../../dist/soo.js"></script>
+    <style>
+        #container{
+            background-color: #ff00ff;
+        }
+    </style>
+</head>
+<body>
+<script>
+var domStage = new Soo.DOMStage('<div class="dom-stage"></div>');
+document.body.append(domStage.element);
+
+var domContainer1 = new Soo.DOMContainer('<div class="dom-container1"><div><div container></div></div></div>');
+var domContainer2 = new Soo.DOMContainer('<div class="dom-container2"></div>');
+domContainer2.x = 10;
+domContainer2.y = 10;
+
+domContainer1.addEventListener(Soo.Event.ADDED_TO_STAGE, function () {
+    console.log("domContainer1 ADDED_TO_STAGE");
+}, this);
+
+domContainer2.addEventListener(Soo.Event.ADDED_TO_STAGE, function() {
+    console.log("domContainer2 ADDED_TO_STAGE");
+}, this);
+
+domContainer1.addChild(domContainer2);
+domStage.addChild(domContainer1);
+
+
+</script>
+</body>
+</html>
