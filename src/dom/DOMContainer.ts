@@ -47,10 +47,24 @@ namespace Soo.dom {
 
             this.$children.splice(index, 0, child);
             child.$setParent(this); // 设置新的父级容器
-            child.$onAddToStage();
+
+            let stage = this.$stage;
+            if (stage) { // 如果父级容器也在舞台中，则通知子项添加到舞台中
+                child.$onAddToStage(stage, this.$nestLevel + 1);
+            }
 
             // 添加事件通知
             child.dispatchWith(Event.ADDED, true);
+
+            if (stage) {
+                let list = $EVENT_ADD_TO_DOM_STAGE_LIST;
+                while (list.length) {
+                    let $item = list.shift();
+                    if ($item.$stage) {
+                        $item.dispatchWith(Event.ADDED_TO_STAGE);
+                    }
+                }
+            }
 
             this.$childAdded(child, index);
             return child;
@@ -101,6 +115,19 @@ namespace Soo.dom {
             this.$childRemoved(child, index);
             child.dispatchWith(Event.REMOVED, true);
 
+            if (this.$stage) { // 在舞台上
+                child.$onRemoveFromStage();
+                let list = $EVENT_REMOVE_FROM_DOM_STAGE_LIST;
+                while (list.length) {
+                    let $item = list.shift();
+                    if ($item.$hasAddToStage) {
+                        $item.$hasAddToStage = false;
+                        $item.dispatchWith(Event.REMOVED_FROM_STAGE);
+                    }
+                    $item.$stage = null;
+                }
+            }
+
             return child;
         }
 
@@ -110,11 +137,12 @@ namespace Soo.dom {
         }
 
         /** 容器添加到舞台 */
-        $onAddToStage(): void {
-            super.$onAddToStage();
+        $onAddToStage(stage: DOMStage, nestLevel: number): void {
+            super.$onAddToStage(stage, nestLevel);
+            nestLevel++;
             let children = this.$children;
             for (let i = 0, len = children.length; i < len; i++) {
-                children[i].$onAddToStage();
+                children[i].$onAddToStage(stage, nestLevel);
             }
         }
 
