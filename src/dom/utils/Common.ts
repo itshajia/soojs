@@ -1,4 +1,5 @@
 namespace Soo.dom {
+    import Point = Soo.math.Point;
     let doc = document;
 
     /** 创建dom */
@@ -56,5 +57,29 @@ namespace Soo.dom {
         if (el) {
             el.removeAttribute(key);
         }
+    }
+
+    /** 将页面坐标转换为元素的本地坐标 */
+    export function getLocalPointFromPage(element: HTMLElement, pageX: number = 0, pageY: number = 0): Point {
+        if (!element) {
+            return;
+        }
+        let bounds = element.getBoundingClientRect();
+        let clientX = pageX - bounds.left - window.pageXOffset;
+        let clientY = pageY - bounds.top - window.pageYOffset;
+        return Point.create(clientX, clientY);
+    }
+
+    /** 阻止事件行为 */
+    export function preventEvent(e: any): boolean {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.cancelBubble = true;
+        e.returnValue = false;
+        return false;
     }
 }

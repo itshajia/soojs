@@ -51,6 +51,14 @@ namespace Soo {
         return obj === Object(obj);
     }
 
+    /** 对象是否为空对象 */
+    export function isEmptyObject(obj: Object): boolean {
+        for (let key in obj ) {
+            return false;
+        }
+        return true;
+    }
+
     /** 是否为字符串 */
     export function isString(val: any): boolean {
         return typeof val === 'string';

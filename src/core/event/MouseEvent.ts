@@ -17,6 +17,9 @@ namespace Soo {
         /** 双击 */
         static MOUSE_DOUBLE_CLICK: string = "mouseDoubleClick";
 
+        /** 移动 */
+        static MOUSE_MOVE: string = "mouseMove";
+
         /** 移出 */
         static MOUSE_OUT: string = "mouseOut";
 

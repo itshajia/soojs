@@ -40,6 +40,16 @@ namespace Soo.math {
             return this.x == to.x && this.y == to.y;
         }
 
+        /** 加上一个坐标点 */
+        add(v: Point): Point {
+            return new Point(this.x + v.x, this.y + v.y);
+        }
+
+        /** 减去一个坐标点 */
+        subtract(v: Point): Point {
+            return new Point(this.x - v.x, this.y - v.y);
+        }
+
         /** 转化为字符串 */
         toString(): string {
             return `(x=${this.x}, y=${this.y})`;
