@@ -2,12 +2,19 @@ namespace Soo {
 
     // 数据对象
     export class Data extends HashObject {
+        constructor() {
+            super();
+            this.$id = `data-${this.$hashCode}` ;
+        }
+
+        private $id: string;
+
         /** 缓存数据 */
         cache(owner: HashObject): any {
-            let value = owner[this.$hashCode];
+            let value = owner[this.$id];
             if (!value) {
                 value = {};
-                owner[this.$hashCode] = value;
+                owner[this.$id] = value;
             }
             return value;
         }
@@ -23,12 +30,26 @@ namespace Soo {
         get(owner: HashObject, key?: string): any {
             return key === undefined ?
                 this.cache(owner) :
-                owner[this.$hashCode] && owner[this.$hashCode][key];
+                owner[this.$id] && owner[this.$id][key];
+        }
+
+        /** 移除 */
+        remove(owner: HashObject, key?: string): void {
+            let cache = owner[this.$id];
+            if (!cache) {
+                return;
+            }
+
+            if (key) {
+                delete cache[key];
+            } else {
+                delete owner[this.$id];
+            }
         }
 
         /** 是否存在缓存数据 */
         hasData(owner: HashObject): boolean {
-            let cache = owner[this.$hashCode];
+            let cache = owner[this.$id];
             return cache !== undefined && !isEmptyObject(cache);
         }
     }

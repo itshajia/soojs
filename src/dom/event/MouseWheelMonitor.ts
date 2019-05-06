@@ -6,33 +6,32 @@ namespace Soo.dom.sys {
         /** 注册监听 */
         enable(obj: DOMElement): void {
             this.disable(obj);
+            let data = $data.get(obj);
+            let onMouseWheel = data.onMouseWheel = function() {
+                $onMouseWheel.apply(obj, arguments);
+            };
 
-            let element = obj.$el;
-            if (element) {
-                let elemData: any = $data.get(obj);
-                let onMouseWheel = elemData.onMouseWheel = function(e) {
-                    $onMouseWheel.apply(obj, arguments);
-                };
-                element.addEventListener("DOMMouseScroll", onMouseWheel);
-                element.addEventListener("mousewheel", onMouseWheel);
+            let elem = obj.$el;
+            if (elem) {
+                elem.addEventListener("DOMMouseScroll", onMouseWheel);
+                elem.addEventListener("mousewheel", onMouseWheel);
             }
         }
 
         /** 注销监听 */
         disable(obj: DOMElement): void {
-            let element = obj.$el;
-            if (element) {
-                let elemData: any = $data.hasData(obj) && $data.get(obj);
-                if (!elemData) {
-                    return;
-                }
-                let onMouseWheel = elemData.onMouseWheel;
-                if (onMouseWheel) {
-                    element.removeEventListener("DOMMouseScroll", onMouseWheel);
-                    element.removeEventListener("mousewheel", onMouseWheel);
-                }
-
+            if (!$data.hasData(obj)) {
+                return;
             }
+
+            let elem = obj.$el;
+            let data = $data.get(obj);
+            let onMouseWheel = data.onMouseWheel;
+            if (elem && onMouseWheel) {
+                elem.removeEventListener("DOMMouseScroll", onMouseWheel);
+                elem.removeEventListener("mousewheel", onMouseWheel);
+            }
+            $data.remove(obj);
         }
     }
     // 内部使用
@@ -44,7 +43,7 @@ namespace Soo.dom.sys {
     function $onMouseWheel(event: any): void {
         clearTimeout($timer);
         let element = event.currentTarget;
-        $timer = setTimeout(() => {
+        $timer = setTimeout(function() {
             event = window.event || event;
             let wheelDelta = event.wheelDelta || -event.detail ||
                 -event.originalEvent.detail || -event.originalEvent.deltaY;

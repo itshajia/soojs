@@ -7,46 +7,48 @@ namespace Soo.dom.sys {
         /** 注册监听 */
         enable(obj: DOMElement): void {
             this.disable(obj);
+            let data: any = $data.get(obj);
+            let onMouseDown = data.onMouseDown = function() {
+                $onMouseDown.apply(obj, arguments);
+            };
+            let onMouseMove = data.onMouseMove = function() {
+                $onMouseMove.apply(obj, arguments);
+            };
+            let onMouseOut  = data.onMouseOut = function() {
+                $onMouseOut.apply(obj, arguments);
+            };
 
-            let element = obj.$el;
-            if (element) {
-                let elemData: any = $data.get(obj);
-                let onMouseDown = elemData.onMouseDown = function(e) {
-                    $onMouseDown.apply(obj, arguments);
-                };
-                let onMouseMove = elemData.onMouseMove = function(e) {
-                    $onMouseMove.apply(obj, arguments);
-                };
-                let onMouseOut = elemData.onMouseOut = function(e) {
-                    $onMouseOut.apply(obj, arguments);
-                };
-                element.addEventListener("mousedown", onMouseDown);
-                element.addEventListener("mousemove", onMouseMove);
-                element.addEventListener("mouseout", onMouseOut);
+            let elem = obj.$el;
+            if (elem) {
+                elem.addEventListener("mousedown", onMouseDown);
+                elem.addEventListener("mousemove", onMouseMove);
+                elem.addEventListener("mouseout", onMouseOut);
             }
         }
 
         /** 注销监听 */
         disable(obj: DOMElement): void {
-            let element = obj.$el;
-            if (element) {
-                let elemData: any = $data.hasData(obj) && $data.get(obj);
-                if (!elemData) {
-                    return;
-                }
-                let onMouseDown = elemData.onMouseDown;
-                let onMouseMove = elemData.onMouseMove;
-                let onMouseOut = elemData.onMouseOut;
+            if (!$data.hasData(obj)) {
+                return;
+            }
+
+            let elem = obj.$el;
+            let data = $data.get(obj);
+            let onMouseDown = data.onMouseDown;
+            let onMouseMove = data.onMouseMove;
+            let onMouseOut  = data.onMouseOut;
+            if (elem) {
                 if (onMouseDown) {
-                    element.removeEventListener("mousedown", onMouseDown);
+                    elem.removeEventListener("mousedown", onMouseDown);
                 }
                 if (onMouseMove) {
-                    element.removeEventListener("mousemove", onMouseMove);
+                    elem.removeEventListener("mousemove", onMouseMove);
                 }
                 if (onMouseOut) {
-                    element.removeEventListener("mouseout", onMouseOut);
+                    elem.removeEventListener("mouseout", onMouseOut);
                 }
             }
+            $data.remove(obj);
         }
     }
     // 内部使用
