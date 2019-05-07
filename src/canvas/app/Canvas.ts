@@ -1,5 +1,4 @@
 namespace Soo.canvas {
-    import DOMElement = Soo.dom.DOMElement;
 
     export type CanvasOptions = {
         /** 渲染模式 auto, canvas, webgl */
@@ -11,32 +10,29 @@ namespace Soo.canvas {
         /** 帧数 */
         fps?: number;
 
-        /** 是否分层提高性能 */
+        /** 是否画布层数（一般用来提高性能） */
         layered?: boolean;
     };
 
 
 
     // Canvas应用
-    export class Canvas extends dom.DOMContainer {
+    export class Canvas extends HashObject {
         constructor(options?: CanvasOptions) {
-            super("<div></div>");
+            super();
 
             let $options: CanvasOptions = extend(this.defaultOptions, options);
+            let renderer = this.$bgRenderer = new CanvasRenderer();
+            let stage = this.$bgStage == new Stage();
+            this.$players.push(new Player(renderer, stage));
             if ($options.layered) {
-                let bgStage = new Stage();
-                let bgRenderer = new dom.CanvasElement();
-                let bgCanvas = bgRenderer.surface;
-                let bgPlayer = new Player(bgRenderer, bgStage);
-
-                let fgStage = new Stage();
-                let fgRenderer = new dom.CanvasElement();
-                let fgCanvas = fgRenderer.surface;
-                let fgPlayer = new Player(fgRenderer, fgStage);
-            } else {
-
+                renderer = new CanvasRenderer();
+                stage = new Stage();
+                this.$players.push(new Player(renderer, stage));
             }
 
+            this.$fgRenderer = renderer;
+            this.$fgStage = stage;
         }
 
         /** 渲染模式 */
@@ -57,7 +53,7 @@ namespace Soo.canvas {
             return this.$fps;
         }
 
-        /** 是否分层 */
+        /** 画布层数 */
         private $layered: boolean;
         get layered(): boolean {
             return this.$layered;
@@ -70,7 +66,7 @@ namespace Soo.canvas {
                 renderMode: "canvas",
                 antialias: false,
                 fps: 30,
-                layered: true, // 默认开启分层（分层模式开启后，将分为 背景层 和 前景层）
+                layered: false, // 默认关闭分层（分层模式开启后，将分为 背景层 和 前景层）
             };
         }
 
@@ -90,22 +86,34 @@ namespace Soo.canvas {
             this.$layered = options.layered;
         }
 
-        /** 渲染元素(画布) */
-        private $renderer: dom.RenderElement;
-        get renderer(): dom.RenderElement {
-            return this.$renderer;
+        /** 渲染器 */
+        private $bgRenderer: Renderer;
+        private $fgRenderer: Renderer;
+        get bgRenderer(): Renderer {
+            return this.$bgRenderer;
         }
-
-        /** 分层模式开启后，将分为 背景层 和 前景层 */
-        private $bgRenderer: dom.RenderElement;
-        get bgRenderer(): dom.RenderElement {
+        get fgRenderer(): Renderer {
+            return this.$fgRenderer;
+        }
+        get renderer(): Renderer {
             return this.$bgRenderer;
         }
 
-        private $fgRenderer: dom.RenderElement;
-        get fgRenderer(): dom.RenderElement {
-            return this.$fgRenderer;
+        /** 舞台列表 */
+        private $bgStage: Stage;
+        private $fgStage: Stage;
+        get bgStage(): Stage {
+            return this.$bgStage;
         }
+        get fgStage(): Stage {
+            return this.$fgStage;
+        }
+        get stage(): Stage {
+            return this.$bgStage;
+        }
+
+        /** 播放器列表 */
+        private $players: Player[] = [];
     }
 }
 

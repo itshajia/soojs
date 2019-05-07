@@ -2,7 +2,7 @@ namespace Soo.canvas {
 
     // Canvas播放器
     export class Player extends HashObject {
-        constructor(renderer: dom.RenderElement, stage: Stage) {
+        constructor(renderer: Renderer, stage: Stage) {
             super();
             this.stage = stage;
         }
