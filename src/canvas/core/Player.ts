@@ -5,10 +5,15 @@ namespace Soo.canvas {
         constructor(renderer: Renderer, stage: Stage) {
             super();
             this.stage = stage;
+            let displayList = this.displayList = new DisplayList(stage);
+            displayList.renderer = renderer;
         }
 
         /** 舞台 */
         stage: Stage;
+
+        /** 显示列表 */
+        displayList: DisplayList;
 
         /** 是否在播放 */
         private $isPlaying: boolean = false;
@@ -41,6 +46,11 @@ namespace Soo.canvas {
         /** 屏幕渲染 */
         $render(): void {
 
+        }
+
+        /** 更新舞台尺寸 */
+        updateStageSize(stageWidth: number, stageHeight: number): void {
+            this.stage.updateStageSize(stageWidth, stageHeight);
         }
     }
 }

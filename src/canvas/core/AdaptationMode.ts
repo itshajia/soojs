@@ -1,7 +1,7 @@
 namespace Soo.canvas {
 
-    // 舞台适配缩放模式
-    export const StageScaleMode = {
+    // 适配模式
+    export const AdaptationMode = {
         /** 不缩放（即使播放器视口大小改变，依然保持原样） */
         NO_SCALE: "noScale",
 

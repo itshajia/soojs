@@ -19,5 +19,10 @@ namespace Soo.canvas {
         get stageHeight(): number {
             return this.$stageHeight;
         }
+
+        /** 更新舞台尺寸 */
+        updateStageSize(stageWidth: number, stageHeight: number): void {
+
+        }
     }
 }

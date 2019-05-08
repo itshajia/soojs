@@ -30,14 +30,14 @@ namespace Soo.canvas {
             let scaleY = (displayHeight / stageHeight) || 0;
 
             switch (scaleMode) {
-                case StageScaleMode.SHOW_ALL: // 宽的方向填满播放器视口，窄的两边留有黑边
+                case AdaptationMode.SHOW_ALL: // 宽的方向填满播放器视口，窄的两边留有黑边
                     if (scaleX > scaleY) {
                         displayWidth = Math.round(stageWidth * scaleY);
                     } else {
                         displayHeight = Math.round(stageHeight * scaleX);
                     }
                     break;
-                case StageScaleMode.NO_BORDER: // 窄的方向填满播放器视口，宽的两边会被裁剪
+                case AdaptationMode.NO_BORDER: // 窄的方向填满播放器视口，宽的两边会被裁剪
                     if (scaleX > scaleY) {
                         displayHeight = Math.round(stageHeight * scaleX);
                     } else {
@@ -70,4 +70,6 @@ namespace Soo.canvas {
             };
         }
     }
+    // 内部使用
+    export let $screenAdapter = new ScreenAdapter();
 }
