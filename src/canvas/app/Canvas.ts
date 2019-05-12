@@ -141,10 +141,10 @@ namespace Soo.canvas {
         private $players: Player[] = [];
         private $bgStage: Stage;
         private $fgStage: Stage;
-        get bg(): Stage {
+        get bgStage(): Stage {
             return this.$bgStage;
         }
-        get fg(): Stage {
+        get fgStage(): Stage {
             return this.$fgStage;
         }
         get stage(): Stage {
