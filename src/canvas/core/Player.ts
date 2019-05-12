@@ -2,17 +2,16 @@ namespace Soo.canvas {
 
     // Canvas播放器
     export class Player extends HashObject {
-        constructor(renderer: Renderer, stage: Stage) {
+        constructor(stage: Stage, displayList: DisplayList) {
             super();
             this.stage = stage;
-            let displayList = this.displayList = new DisplayList(stage);
-            displayList.renderer = renderer;
+            this.displayList = displayList;
         }
 
         /** 舞台 */
         stage: Stage;
 
-        /** 显示列表 */
+        /** 显示对象列表 */
         displayList: DisplayList;
 
         /** 是否在播放 */

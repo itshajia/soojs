@@ -1,7 +1,7 @@
 namespace Soo.canvas {
 
     // 渲染元素
-    export interface Renderer {
+    export interface RenderElement {
         /** 画布 */
         surface: any;
 

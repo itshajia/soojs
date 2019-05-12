@@ -21,30 +21,31 @@ namespace Soo.canvas {
     };
 
 
-
     // Canvas应用
     export class Canvas extends HashObject implements Screen {
         constructor(options?: CanvasOptions) {
             super();
 
             let $options: CanvasOptions = extend(this.defaultOptions, options);
-            let container = this.$element = document.createElement("div");
-            let renderer = this.$bgRenderer = new CanvasRenderer();
-            let stage = this.$bgStage == new Stage();
-            this.$renderers.push(renderer);
-            this.$stages.push(stage);
-            this.$players.push(new Player(renderer, stage));
-            container.appendChild(renderer.surface);
+            let container = this.$element = document.createElement("div"); // canvas容器
+
+            let stage = this.$bgStage = new Stage();
+            let renderElement = new CanvasElement();
+            let displayList = new DisplayList(stage, renderElement);
+            this.$renderElements.push(renderElement);
+            let player = new Player(stage, displayList);
+            this.$players.push(player);
+            container.appendChild(renderElement.surface);
             if ($options.layered) {
-                renderer = new CanvasRenderer();
                 stage = new Stage();
-                this.$renderers.push(renderer);
-                this.$stages.push(stage);
-                this.$players.push(new Player(renderer, stage));
-                container.appendChild(renderer.surface);
+                renderElement = new CanvasElement();
+                displayList = new DisplayList(stage, renderElement);
+                this.$renderElements.push(renderElement);
+                player = new Player(stage, displayList);
+                this.$players.push(player);
+                container.appendChild(renderElement.surface);
             }
 
-            this.$fgRenderer = renderer;
             this.$fgStage = stage;
         }
 
@@ -133,41 +134,38 @@ namespace Soo.canvas {
             return this.$element;
         }
 
-        /** 渲染器 */
-        private $renderers: Renderer[] = [];
-        private $bgRenderer: Renderer;
-        private $fgRenderer: Renderer;
-        get bgRenderer(): Renderer {
-            return this.$bgRenderer;
-        }
-        get fgRenderer(): Renderer {
-            return this.$fgRenderer;
-        }
-        get renderer(): Renderer {
-            return this.$bgRenderer;
-        }
+        /** 渲染元素列表 */
+        private $renderElements: RenderElement[] = [];
 
-        /** 舞台列表 */
-        private $stages: Stage[] = [];
+        /** 播放器列表 */
+        private $players: Player[] = [];
         private $bgStage: Stage;
         private $fgStage: Stage;
-        get bgStage(): Stage {
+        get bg(): Stage {
             return this.$bgStage;
         }
-        get fgStage(): Stage {
+        get fg(): Stage {
             return this.$fgStage;
         }
         get stage(): Stage {
             return this.$bgStage;
         }
 
-        /** 播放器列表 */
-        private $players: Player[] = [];
+        /** 尺寸调整 */
+        resize(): void {
+
+        }
+        resizeTo(width: number, height: number): void {
+            this.$element.style.width = width +"px";
+            this.$element.style.height = height +"px";
+            this.updateScreenSize();
+        }
+
 
         /** 更新屏幕尺寸 */
         updateScreenSize(): void {
             for (let i = 0; i < 2; i++) {
-                this.$updateScreenSize(this.$renderers[i].surface, this.$players[i]);
+                this.$updateScreenSize(this.$renderElements[i].surface, this.$players[i]);
             }
         }
 

@@ -5,7 +5,7 @@ namespace Soo.canvas {
         return ;
     }
 
-    export class WebGLRenderer {
+    export class WebGLElement {
         constructor(width?: number, height?: number) {
             this.surface = createWebGL(width, height);
         }

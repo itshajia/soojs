@@ -35,7 +35,7 @@ namespace Soo.canvas {
         return canvas;
     }
 
-    export class CanvasRenderer implements Renderer {
+    export class CanvasElement implements RenderElement {
         constructor(width?: number, height?: number) {
             this.surface = createCanvas(width, height);
             this.context = this.surface.getContext("2d");

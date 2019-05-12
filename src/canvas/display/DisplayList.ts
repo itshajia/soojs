@@ -2,9 +2,10 @@ namespace Soo.canvas {
 
     // 显示对象列表
     export class DisplayList extends HashObject {
-        constructor(root: DisplayObject) {
+        constructor(root: DisplayObject, renderElement?: RenderElement) {
             super();
             this.root = root;
+            this.renderElement = renderElement;
         }
 
         /** 显示列表根节点对象 */
@@ -14,7 +15,7 @@ namespace Soo.canvas {
         private $isStage: boolean = false;
 
         /** 渲染元素 */
-        renderer: Renderer;
+        renderElement: RenderElement;
 
         /** 脏矩形策略 */
         private $dirtyRegionPolicy: string = DirtyRegionPolicy.ON;
