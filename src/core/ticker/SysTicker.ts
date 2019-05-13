@@ -16,7 +16,7 @@ namespace Soo {
 
     // 系统内部使用
     export let $sysTicker: SysTicker = new SysTicker();
-    startTicker($sysTicker); // 启动系统计时器
+    startTicker(); // 启动系统计时器
 
     /** 刷新计时器 */
     function updateTickers(): void {
@@ -26,7 +26,7 @@ namespace Soo {
     }
 
     /** 启动系统计时器 */
-    function startTicker(ticker: Ticker): void {
+    function startTicker(): void {
         let requestAnimationFrame =
             window["requestAnimationFrame"] ||
             window["webkitRequestAnimationFrame"] ||

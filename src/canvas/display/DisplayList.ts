@@ -17,6 +17,11 @@ namespace Soo.canvas {
         /** 渲染元素 */
         renderElement: RenderElement;
 
+        /** 标记一个显示对象需要重新渲染 */
+        dirty(displayObject: DisplayObject): void {
+
+        }
+
         /** 脏矩形策略 */
         private $dirtyRegionPolicy: string = DirtyRegionPolicy.ON;
         set dirtyRegionPolicy(value: string) {

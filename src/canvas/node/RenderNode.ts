@@ -43,5 +43,11 @@ namespace Soo.canvas {
 
         /** 绘制次数 */
         renderCount: number = 0;
+
+        /** 清空所有数据（在调用显示对象的render方法前执行） */
+        flushRenderData(): void {
+            this.renderData.length = 0;
+            this.renderCount = 0;
+        }
     }
 }

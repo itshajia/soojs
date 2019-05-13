@@ -33,9 +33,9 @@ namespace Soo.canvas {
         DirtyConcatenatedVisible = 0x0080,
 
         /** DrawData失效 */
-        DirtyRenderNodes = 0x0100,
+        DirtyRenderNode = 0x0100,
 
-        /** 自身重新绘制 */
+        /** 自身重新绘制(可能是drawData没变化，这是发生了矩阵变换) */
         DirtyRender = 0x200,
 
         /** 重绘所有子项 */
@@ -55,7 +55,7 @@ namespace Soo.canvas {
             DisplayObjectFlags.DirtyInvertedConcatenatedMatrix |
             DisplayObjectFlags.DirtyConcatenatedAlpha |
             DisplayObjectFlags.DirtyConcatenatedVisible |
-            DisplayObjectFlags.DirtyRenderNodes |
+            DisplayObjectFlags.DirtyRenderNode |
             DisplayObjectFlags.Dirty
     }
 
@@ -147,26 +147,77 @@ namespace Soo.canvas {
             return this.$stage;
         }
 
-        /** 标记绘图失效，需要重新绘制 */
-        protected $dirtyRender(notifyChildren?: boolean): void {
+        /** 渲染节点 */
+        $renderNode: RenderNode;
+        $getRenderNode(): RenderNode {
+            let node = this.$renderNode;
+            if (!node) {
+                return null;
+            }
+
+            if (this.$hasFlags(DisplayObjectFlags.DirtyRenderNode)) {
+                node.flushRenderData();
+                this.$render();
+                this.$removeFlags(DisplayObjectFlags.DirtyRenderNode);
+                node = this.$renderNode;
+            }
+            return node;
+        }
+
+        /** 显示对象列表 */
+        $displayList: DisplayList;
+
+        /** 执行渲染 */
+        $render(): void {
 
         }
 
-        /** 标记变换叠加的显示内容失效 */
-        protected $dirtyTransform(): void {
+        /** 标记绘图失效，需要重新绘制 */
+        protected $dirtyRender(notifyChildren?: boolean): void {
+            if (!this.$renderNode || this.$hasFlags(DisplayObjectFlags.DirtyRender | DisplayObjectFlags.DirtyRenderNode)) {
+                return;
+            }
 
+            this.$setFlags(DisplayObjectFlags.DirtyRender | DisplayObjectFlags.DirtyRenderNode);
+            let displayList = this.$displayList;
+            if (displayList) {
+                displayList.dirty(this);
+            }
+        }
+
+        /** 标记变换叠加的显示内容失效(影响到子项) */
+        protected $dirtyTransform(): void {
+            if (this.$hasFlags(DisplayObjectFlags.Dirty)) {
+                return;
+            }
+
+            this.$setFlags(DisplayObjectFlags.Dirty); // 自身包括子项
         }
 
         /** 标记自身内容尺寸失效 */
-        protected $dirtyContentBounds(): void {}
+        protected $dirtyContentBounds(): void {
+            this.$dirtyRender();
+            this.$setFlags(DisplayObjectFlags.DirtyContentBounds);
+            this.$setFlagsUp(DisplayObjectFlags.DirtyBounds); // 当前子项的绘制区域改变，可能会影响父级的整个区域
+        }
 
         /** 标记矩阵失效 */
         protected $dirtyMatrix(): void {
+            if (this.$hasFlags(DisplayObjectFlags.DirtyMatrix)) {
+                return;
+            }
 
+            this.$setFlags(DisplayObjectFlags.DirtyMatrix);
+            this.$dirtyPosition(); // 矩阵失效，位置有可能会失效
         }
         /** 标记位置发生改变 */
         protected $dirtyPosition(): void {
-
+            this.$dirtyTransform(); // 位置发生变换，则表示变换失效
+            this.$setFlagsDown(DisplayObjectFlags.DirtyConcatenatedMatrix |
+                DisplayObjectFlags.DirtyInvertedConcatenatedMatrix);
+            if (this.$parent) { // 如果父级存在，则会影响到父级的整个区域
+                this.$parent.$setFlagsUp(DisplayObjectFlags.DirtyBounds);
+            }
         }
 
         /** 显示对象矩阵 */
