@@ -6,6 +6,8 @@ namespace Soo.canvas {
     import Rectangle = Soo.math.Rectangle;
     import Point = Soo.math.Point;
     import $TempMatrix = Soo.math.$TempMatrix;
+    import $TempPoint = Soo.math.$TempPoint;
+    import $TempHitTestPoint = Soo.math.$TempHitTestPoint;
     export let $EVENT_ADD_TO_STAGE_LIST: DisplayObject[] = [];
     export let $EVENT_REMOVE_FROM_STAGE_LIST: DisplayObject[] = [];
 
@@ -96,7 +98,7 @@ namespace Soo.canvas {
         }
 
         /** 沿着显示列表向上设置标志量，如果已经被设置过了就停止传递 */
-        protected $setFlagsUp(flags: DisplayObjectFlags): void {
+        $setFlagsUp(flags: DisplayObjectFlags): void {
             if (this.$hasFlags(flags)) {
                 return;
             }
@@ -172,8 +174,8 @@ namespace Soo.canvas {
 
         }
 
-        /** 标记绘图失效，需要重新绘制 */
-        protected $dirtyRender(notifyChildren?: boolean): void {
+        /** 标记绘图失效，需要重新绘制（可能是因为绘制的数据变化；也有可能是因为变换或位置，保持就的绘制数据重新渲染） */
+        $dirtyRender(): void {
             if (!this.$renderNode || this.$hasFlags(DisplayObjectFlags.DirtyRender | DisplayObjectFlags.DirtyRenderNode)) {
                 return;
             }
@@ -186,7 +188,7 @@ namespace Soo.canvas {
         }
 
         /** 标记变换叠加的显示内容失效(影响到子项) */
-        protected $dirtyTransform(): void {
+        $dirtyTransform(): void {
             if (this.$hasFlags(DisplayObjectFlags.Dirty)) {
                 return;
             }
@@ -195,14 +197,14 @@ namespace Soo.canvas {
         }
 
         /** 标记自身内容尺寸失效 */
-        protected $dirtyContentBounds(): void {
+        $dirtyContentBounds(): void {
             this.$dirtyRender();
             this.$setFlags(DisplayObjectFlags.DirtyContentBounds);
             this.$setFlagsUp(DisplayObjectFlags.DirtyBounds); // 当前子项的绘制区域改变，可能会影响父级的整个区域
         }
 
         /** 标记矩阵失效 */
-        protected $dirtyMatrix(): void {
+        $dirtyMatrix(): void {
             if (this.$hasFlags(DisplayObjectFlags.DirtyMatrix)) {
                 return;
             }
@@ -211,7 +213,7 @@ namespace Soo.canvas {
             this.$dirtyPosition(); // 矩阵失效，位置有可能会失效
         }
         /** 标记位置发生改变 */
-        protected $dirtyPosition(): void {
+        $dirtyPosition(): void {
             this.$dirtyTransform(); // 位置发生变换，则表示变换失效
             this.$setFlagsDown(DisplayObjectFlags.DirtyConcatenatedMatrix |
                 DisplayObjectFlags.DirtyInvertedConcatenatedMatrix);
@@ -761,6 +763,28 @@ namespace Soo.canvas {
         /** 测量高度 */
         get measuredHeight(): number {
             return this.$getBounds().height;
+        }
+
+        /** 碰撞测试 */
+        $hitTest(stageX: number, stageY: number): DisplayObject {
+            if (!this.$renderNode || !this.$visible || this.$scaleX == 0 || this.$scaleY == 0) {
+                return null;
+            }
+
+            /*let m = this.$getInvertedConcatenatedMatrix();
+            if (m.a == 0 && m.b == 0 && m.c == 0 && m.d == 0) {
+                return null;
+            }*/
+
+            let bounds = this.$getContentBounds();
+            this.globalToLocal(stageX, stageY, $TempHitTestPoint);
+            let localX = $TempHitTestPoint.x;
+            let localY = $TempHitTestPoint.y;
+            if (bounds.contains(localX, localY)) {
+                return this;
+            }
+
+            return null;
         }
     }
     

@@ -1,6 +1,7 @@
 namespace Soo.canvas {
     import Rectangle = Soo.math.Rectangle;
     import $TempRectangle = Soo.math.$TempRectangle;
+    import $TempHitTestPoint = Soo.math.$TempHitTestPoint;
 
     // 显示对象容器
     export class Container extends DisplayObject {
@@ -80,6 +81,8 @@ namespace Soo.canvas {
                 }
             }
 
+            child.$setFlagsDown(DisplayObjectFlags.AddedOrRemoved);
+            this.$setFlagsUp(DisplayObjectFlags.DirtyBounds); // 添加子项后，可能会影响到父级的边界，所以这里需要网上传递
             this.$childAdded(child, index);
             return child;
         }
@@ -93,6 +96,19 @@ namespace Soo.canvas {
                 child = child.parent;
             }
             return false;
+        }
+
+        /** 返回指定索引位置上的子项 */
+        getChildAt(index: number): DisplayObject {
+            index = +index | 0;
+            if (index >= 0 && index < this.$children.length) {
+                return this.$children[index];
+            }
+        }
+
+        /** 返回子项索引值 */
+        getChildIndex(child: DisplayObject): number {
+            return this.$children.indexOf(child);
         }
 
         /** 移除子项 */
@@ -141,6 +157,9 @@ namespace Soo.canvas {
                     $item.$stage = null;
                 }
             }
+
+            child.$setFlagsDown(DisplayObjectFlags.AddedOrRemoved);
+            this.$setFlagsUp(DisplayObjectFlags.DirtyBounds); // 移除子项后，可能会影响到父级的边界，所以这里需要网上传递
             return child;
         }
 
@@ -229,6 +248,61 @@ namespace Soo.canvas {
                 return false;
             }
             this.$touchChildren = value;
+        }
+
+        $dirtyRender(): void {
+            super.$dirtyRender();
+
+            let children = this.$children;
+            for (let i = 0, len = children.length; i < len; i++) {
+                children[i].$dirtyRender();
+            }
+        }
+
+        $dirtyTransform(): void {
+            super.$dirtyTransform();
+
+            let children = this.$children;
+            for (let i = 0, len = children.length; i < len; i++) {
+                children[i].$dirtyTransform();
+            }
+        }
+
+        /** 碰撞测试 */
+        $hitTest(stageX: number, stageY: number): DisplayObject {
+            if (!this.$visible) {
+                return null;
+            }
+
+            this.globalToLocal(stageX, stageY, $TempHitTestPoint);
+            let localX = $TempHitTestPoint.x;
+            let localY = $TempHitTestPoint.y;
+
+            const children = this.$children;
+            let found = false;
+            let target;
+            for (let i = children.length - 1; i >= 0; i--) {
+                const child = children[i];
+                target = child.$hitTest(stageX, stageY);
+                if (target) {
+                    found = true;
+                    if (target.touchEnabled) {
+                        break;
+                    } else {
+                        target = null;
+                    }
+                }
+            }
+
+            if (target) {
+                if (this.$touchChildren) {
+                    return target;
+                }
+            }
+            if (found && this.$touchEnabled) {
+                return this;
+            }
+            return super.$hitTest(stageX, stageY);
         }
     }
 }

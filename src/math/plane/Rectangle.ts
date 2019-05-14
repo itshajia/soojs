@@ -51,6 +51,14 @@ namespace Soo.math {
                 && this.width === to.width && this.height === to.height;
         }
 
+        /** 包含点 */
+        contains(x: number, y: number): boolean {
+            return this.x <= x &&
+                this.x + this.width >= x &&
+                this.y <= y &&
+                this.y + this.height >= y;
+        }
+
         /** 转化为字符串 */
         toString(): string {
             return `(x=${this.x}, y=${this.y}, width=${this.width}, height=${this.height})`;

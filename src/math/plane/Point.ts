@@ -70,4 +70,5 @@ namespace Soo.math {
 
     // 仅供框架内部使用
     export let $TempPoint = new Point();
+    export let $TempHitTestPoint = new Point();
 }
