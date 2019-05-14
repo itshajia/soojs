@@ -18,6 +18,7 @@ gulp.task("default", function () {
         'src/i18n/**',
         'src/utils/*',
         'src/math/Math.ts', 'src/math/plane/*', 'src/math/space/*',
+        'src/platform/*',
         'src/core/event/*',
         'src/core/ticker/Ticker.ts', 'src/core/ticker/*',
         'src/core/display/$DisplayObject.ts', 'src/core/display/*',
